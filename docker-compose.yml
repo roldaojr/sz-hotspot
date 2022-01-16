@@ -1,0 +1,49 @@
+version: "3"
+services:
+  daloradius:
+    image: frauhottelmann/daloradius-docker:1.2
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - 1812:1812/tcp
+      - 1812:1812/udp
+      - 1813:1813/tcp
+      - 1813:1813/udp
+      - 8081:80
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=radius
+      - MYSQL_USER=radius
+      - MYSQL_PASSWORD=dalodbpass
+  mysql:
+    image: mariadb:10.3
+    restart: always
+    environment:
+      - MYSQL_DATABASE=radius
+      - MYSQL_USER=radius
+      - MYSQL_PASSWORD=dalodbpass
+      - MYSQL_ROOT_PASSWORD=dalorootpass
+    volumes:
+      - dbdata:/var/lib/mysql
+  web:
+    build:
+      dockerfile: php7-apache2-mysqli-dockerfile
+      context: .
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - NBI_USERNAME=nbiuser
+      - NBI_PASSWORD=nbipass
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=radius
+      - MYSQL_USER=radius
+      - MYSQL_PASSWORD=dalodbpass
+    volumes:
+      - ./html:/var/www/html
+
+volumes:
+  dbdata:

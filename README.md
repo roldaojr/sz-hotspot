@@ -4,7 +4,8 @@ Simple web page for Ruckus SmartZone hotspot wireless network.
 
 Services
   * Hotspot web page (port 8080)
-  * daloradius web interface (port 8081)
+  * Simple Guest Manager (port 8081)
+  * adminer database manager (port 8082)
   * RADIUS (ports 1812-1813)
 
 ## Configuration

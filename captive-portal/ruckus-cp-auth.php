@@ -1,4 +1,5 @@
 <?php
+// Show messages by ResponseCode
 $replyMessages = Array(
   100 => "Type your username and password to access the Internet",
   101 => "Authorized. You can now browse the Internet",
@@ -10,7 +11,7 @@ $replyMessages = Array(
 function sz_hotspot_auth($username, $password) {
   $response = sz_nbi_request(Array(
     "RequestCategory" => "UserOnlineControl",
-    "RequestType" =>  ($_POST['action'] == "disconnect") ? "Logout" : "Login",
+    "RequestType" =>  ($_REQUEST['action'] == "logoff") ? "Logout" : "Login",
     "UE-Username" => $username,
     "UE-Password" => $password
   ));
@@ -81,8 +82,8 @@ function sz_nbi_request($request) {
   $content = curl_exec($curl);
   if ($content === false) {
     return (object) Array(
-      "error" => curl_errno($curl),
-      "message" => curl_error($curl)
+      "ResponseCode" => 500,
+      "ReplyMessage" => "Connection failed"
     );
   }
   curl_close($curl);
@@ -92,4 +93,3 @@ function sz_nbi_request($request) {
   }
   return $response;
 }
-?>

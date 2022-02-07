@@ -1,33 +1,36 @@
 version: "3"
 services:
-  daloradius:
-    image: frauhottelmann/daloradius-docker:1.2
-    restart: always
-    depends_on:
-      - mysql
-    ports:
-      - 1812:1812/tcp
-      - 1812:1812/udp
-      - 1813:1813/tcp
-      - 1813:1813/udp
-      - 8081:80
-    environment:
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL_DATABASE=radius
-      - MYSQL_USER=radius
-      - MYSQL_PASSWORD=dalodbpass
-  mysql:
+  db:
     image: mariadb:10.3
     restart: always
     environment:
       - MYSQL_DATABASE=radius
       - MYSQL_USER=radius
-      - MYSQL_PASSWORD=dalodbpass
-      - MYSQL_ROOT_PASSWORD=dalorootpass
+      - MYSQL_PASSWORD=radpass
+      - MYSQL_ROOT_PASSWORD=radpass
     volumes:
       - dbdata:/var/lib/mysql
-  web:
+      - ./config/radius.sql:/docker-entrypoint-initdb.d/radius.sql
+  radius:
+    image: 2stacks/freeradius
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 1812:1812/tcp
+      - 1812:1812/udp
+      - 1813:1813/tcp
+      - 1813:1813/udp
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=radius
+      - DB_USER=radius
+      - DB_PASSWORD=radpass
+      - RAD_DEBUG=yes
+      - RADIUS_KEY=testing123
+      - RAD_CLIENTS=*
+  captiveportal:
     build:
       dockerfile: php7-apache2-mysqli-dockerfile
       context: .
@@ -35,15 +38,43 @@ services:
     ports:
       - 8080:80
     environment:
-      - NBI_USERNAME=nbiuser
-      - NBI_PASSWORD=nbipass
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL_DATABASE=radius
-      - MYSQL_USER=radius
-      - MYSQL_PASSWORD=dalodbpass
+      - NBI_USERNAME=api
+      - NBI_PASSWORD=ruckus@123
     volumes:
-      - ./html:/var/www/html
+      - ./captive-portal:/var/www/html
+  manager:
+    build:
+      dockerfile: php7-apache2-mysqli-dockerfile
+      context: .
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8081:80
+    environment:
+      - DB_TYPE=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=radius
+      - DB_USER=radius
+      - DB_PASSWORD=radpass
+    volumes:
+      - ./manager:/var/www/html
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+    ports:
+      - 8082:8080
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
 
 volumes:
   dbdata:

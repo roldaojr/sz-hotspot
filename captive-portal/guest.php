@@ -1,13 +1,35 @@
 <?php
 error_reporting (E_ALL ^ E_NOTICE);
-$redirectURL = $_GET["url"] ? $_GET["url"] : "";
+$redirectURL = $_GET["url"] ?? "";
 require("ruckus-cp-auth.php");
 
+$replyMessages = Array(
+  100 => "Type your guest code to access the Internet",
+  101 => "Authorized. You can now browse the Internet",
+  200 => "Type your guest code to access the Internet",
+  201 => "Authorized. You can now browse the Internet",
+  301 => "Invalid guest code"
+);
+
 if($_SERVER["REQUEST_METHOD"] == "POST") {
-  $username = get_guest_info($_POST["guest_code"]);
-  $response = sz_hotspot_auth($_POST["username"], $_POST["password"]);
-} else {
-  $response = sz_hotspot_auth_status();
+  $response = sz_hotspot_auth($_POST["guestcode"], "guest");
+  if($response->authorized) {
+    setcookie("cp_guestcode", $_POST["guestcode"], time()+86400);
+  }
+} elseif($_COOKIE['cp_guestcode']) {
+  $response = sz_hotspot_auth($_COOKIE['cp_guestcode'], "guest");
+  if($response->authorized && $redirectURL) {
+    header("Location: $redirectURL");
+    exit();
+  }
+}
+
+if(!$response) {
+    $response = sz_hotspot_auth_status();
+}
+
+if(!$response->authorized) {
+  setcookie("cp_guestcode", "", time()-3600);
 }
 ?>
 <!doctype html>
@@ -20,7 +42,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
   <meta http-equiv="refresh" content="0;url=<?php echo $redirectURL ?>">
 <?php } ?>
   <link href="css/bootstrap.min.css" rel="stylesheet">
-  <title>Welcome to Wireless Network</title>
+  <title>Welcome to Guest Wireless Network</title>
   <style type="text/css">
     body { padding-top: 20px; }
   </style>
@@ -29,41 +51,34 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
   <div class="container">
     <div class="col-lg-6 col-md-8 col-sm-10 offset-lg-3 offset-md-2 offset-sm-1">
       <h2 class="page-header text-center">
-        Welcome to Wireless Network
+        Welcome to Guest Wireless Network
       </h2>
       <div class="card">
         <div class="card-body">
-          <form method="POST">
+          <form method="POST" class="mb-0">
             <?php if($response->authorized) { ?>
             <div class="alert alert-success" role="alert"><?php echo $response->ReplyMessage ?></div>
             <?php } elseif($response->error) { ?>
             <div class="alert alert-danger" role="alert"><?php echo $response->ReplyMessage ?></div>
-            <?php } else { ?>
+            <?php } elseif($response->ReplyMessage) { ?>
             <div class="alert alert-info" role="alert"><?php echo $response->ReplyMessage ?></div>
             <?php } ?>
             <?php if($response->authorized) { ?>
-            <p>
-              <b>Username:</b> <?php echo $response->{'UE-Username'} ?>
-            </p>
             <div class="d-grid gap-2">
               <?php if($redirectURL) { ?>
               <a href="<?php echo $redirectURL ?>" class="btn btn-primary">Continue</a>
               <?php } ?>
-              <button type="submit" name="action" value="disconnect" class="btn btn-danger">Disconnect</a>
+              <button type="submit" name="action" value="logoff" class="btn btn-danger">Logoff</a>
             </div>
             <?php } else { ?>
             <div class="mb-3">
-              <label for="username" class="form-label<?php echo ($response->error)?' text-danger':''?>">Username</label>
-              <input type="text" name="username" class="form-control<?php echo ($response->error)?' is-invalid':''?>">
-            </div>
-            <div class="mb-3">
-              <label for="password" class="form-label<?php echo ($response->error)?' text-danger':''?>">Password</label>
-              <input type="password" name="password" class="form-control<?php echo ($response->error)?' is-invalid':''?>">
+              <label for="guestcode" class="form-label<?php echo ($response->error)?' text-danger':''?>">Guest code</label>
+              <input type="text" name="guestcode" class="form-control<?php echo ($response->error)?' is-invalid':''?>">
             </div>
             <div class="d-grid">
-              <button class="btn btn-primary" type="submit">Submit</button>
+              <button class="btn btn-primary" type="submit">Login</button>
             </div>
-          <?php } ?>
+            <?php } ?>
           </form>
         </div>
       </div>

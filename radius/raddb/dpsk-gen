@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+from sys import argv
+from hashlib import pbkdf2_hmac
+if len(argv) != 3:
+  print("Usage: %s <PSK> <SSID>" % argv[0])
+  quit()
+psk = pbkdf2_hmac('sha1', str.encode(argv[1]), str.encode(argv[2]), 4096, 32)
+print("0x00" + psk.hex())

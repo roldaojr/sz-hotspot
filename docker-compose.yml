@@ -12,7 +12,8 @@ services:
       - dbdata:/var/lib/mysql
       - ./initdb.d/radius.sql:/docker-entrypoint-initdb.d/radius.sql
   radius:
-    image: 2stacks/freeradius
+    build:
+      context: radius
     restart: always
     depends_on:
       - db
@@ -21,6 +22,8 @@ services:
       - 1812:1812/udp
       - 1813:1813/tcp
       - 1813:1813/udp
+      - 11812:11812/tcp
+      - 11812:11812/udp
     environment:
       - DB_HOST=db
       - DB_PORT=3306

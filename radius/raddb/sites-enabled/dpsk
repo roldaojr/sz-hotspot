@@ -1,0 +1,46 @@
+server {
+	listen {
+		type = auth
+		ipaddr = *
+		port = 11812
+		limit {
+			max_connections = 16
+			lifetime = 0
+			idle_timeout = 30
+		}
+	}
+	authorize {
+		update control {
+			&Group := "dpsk"
+			&User-Profile := "dpsk"
+		}
+		sql
+                update reply {
+			&Ruckus-Dpsk := "%{exec:/etc/raddb/dpsk-gen %{string:reply:Ruckus-Dpsk} %{Ruckus-SSID}}"
+		}
+		pap
+	}
+	authenticate {
+		Auth-Type PAP {
+			pap
+		}
+		Auth-Type MS-CHAP {
+			mschap
+		}
+		eap
+	}
+	preacct {
+		preprocess
+		acct_unique
+	}
+	accounting {
+		sql
+	}
+	session {
+	}
+	post-auth {
+		update {
+			&reply: += &session-state:
+		}
+	}
+}

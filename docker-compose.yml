@@ -10,7 +10,7 @@ services:
       - MYSQL_ROOT_PASSWORD=radpass
     volumes:
       - dbdata:/var/lib/mysql
-      - ./config/radius.sql:/docker-entrypoint-initdb.d/radius.sql
+      - ./initdb.d/radius.sql:/docker-entrypoint-initdb.d/radius.sql
   radius:
     image: 2stacks/freeradius
     restart: always

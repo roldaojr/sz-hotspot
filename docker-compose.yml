@@ -43,6 +43,12 @@ services:
     environment:
       - NBI_USERNAME=api
       - NBI_PASSWORD=ruckus@123
+      - DB_TYPE=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=radius
+      - DB_USER=radius
+      - DB_PASSWORD=radpass
     volumes:
       - ./captive-portal:/var/www/html
   manager:

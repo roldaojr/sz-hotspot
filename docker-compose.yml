@@ -35,7 +35,7 @@ services:
       - RAD_CLIENTS=*
   captiveportal:
     build:
-      dockerfile: php7-apache2-mysqli-dockerfile
+      dockerfile: php7-apache2-pdo-dockerfile
       context: .
     restart: always
     ports:
@@ -53,7 +53,7 @@ services:
       - ./captive-portal:/var/www/html
   manager:
     build:
-      dockerfile: php7-apache2-mysqli-dockerfile
+      dockerfile: php7-apache2-pdo-dockerfile
       context: .
     restart: always
     depends_on:

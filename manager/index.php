@@ -3,7 +3,7 @@ require('guest-dao.php');
 $dao = new GuestDAO();
 if($_SERVER['REQUEST_METHOD'] == "POST") {
   $result = new StdClass();
-  if($_POST["add"] == "new") {
+  if($_POST["action"] == "add") {
     try {
       $dao->create($_POST["guest_code"], Array(
         "Cleartext-Password" => "guest",
@@ -11,6 +11,15 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
         "Expiration" => "{$_POST["expration_date"]} {$_POST["expration_time"]}"
       ));
       $result->message = "Guest created";
+      $result->success = true;
+    } catch(Throwable $ex) {
+      $result->message = $ex->getMessage();
+      $result->error = true;
+    }
+  } else if($_POST["action"] == "clean") {
+    try {
+      $dao->cleanup();
+      $result->message = "Expired guets removed";
       $result->success = true;
     } catch(Throwable $ex) {
       $result->message = $ex->getMessage();
@@ -103,13 +112,16 @@ $guests = $dao->list();
         </td>
         <td>
           <div class="d-grid">
-            <button type="submit" class="btn btn-success" name="add" value="new">
+            <button type="submit" class="btn btn-success" name="action" value="add">
               Add
             </button>
           </div>
         </td>
       </tr>
     </table>
+    <button type="submit" class="btn btn-dark" name="action" value="clean">
+      Remove expired guests
+    </button>
   </form>
 </body>
 <script type="text/javascript" src="js/jquery.min.js"></script>

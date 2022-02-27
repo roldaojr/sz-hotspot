@@ -3,12 +3,12 @@ class GuestDAO {
     private $_db;
 
     function __construct() {
-        $type = $_ENV["DB_TYPE"];
-        $host = $_ENV["DB_HOST"];
-        $port = $_ENV["DB_PORT"];
-        $dbname = $_ENV["DB_NAME"];
-        $dbuser = $_ENV["DB_USER"];
-        $dbpass = $_ENV["DB_PASSWORD"];
+        $type = getenv("DB_TYPE");
+        $host = getenv("DB_HOST");
+        $port = getenv("DB_PORT");
+        $dbname = getenv("DB_NAME");
+        $dbuser = getenv("DB_USER");
+        $dbpass = getenv("DB_PASSWORD");
         $this->_db = new PDO(
             "${type}:host=${host}${($port)?";port=${port}":""};dbname=${dbname};",
             $dbuser,
@@ -36,7 +36,7 @@ class GuestDAO {
         )) {
             foreach($result as $row) {
                 $attributes[$row->attribute] = $row->value;
-            }            
+            }
         }
         return $attributes;
     }
@@ -74,6 +74,22 @@ class GuestDAO {
     function delete($username) {
         $quoted_username = $this->_db->quote($username);
         $this->_db->exec("delete from radcheck where username = $quoted_username");
+        return true;
+    }
+    function cleanup() {
+        $type = getenv("DB_TYPE");
+        if($type == "mysql") {
+            $query = "delete from radcheck where username in (".
+            "select username from radcheck where attribute = 'Expiration'".
+            " and str_to_date(value, '%M %d %Y') < curdate())";
+        } else if($type == "pgsql") {
+            $query = "delete from radcheck where username in (".
+            "select username from radcheck where attribute = 'Expiration'".
+            " and to_date(value, 'Month DD YYYY') < current_date())";
+        } else {
+            throw new Exception("Not implemented");
+        }
+        $this->_db->exec($query);
         return true;
     }
 }
